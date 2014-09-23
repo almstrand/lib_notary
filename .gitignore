@@ -1,0 +1,10 @@
+*/packages
+*/pubspec.lock
+.idea
+
+# Pub generated "packages" directories and files
+packages
+pubspec.lock
+
+# Pub generated build
+build
