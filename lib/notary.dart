@@ -8,6 +8,34 @@ import 'package:googleapis_auth/src/crypto/rsa.dart';
 import 'package:googleapis_auth/src/crypto/pem.dart';
 import 'package:googleapis_auth/src/crypto/rsa_sign.dart';
 
+class SignedRequest {
+  
+  /**
+   * URL that may be used to access requested Google Cloud Storage file.
+   */
+  String url;
+  
+  /**
+   * The verb that may be used with the signed URL. Signed URLs can be used with GET, HEAD, PUT, and DELETE requests. Although Signed URLs cannot be used with POST, you can use the POST signature parameters described in POST Object to authenticate using web forms.
+   */
+  String httpVerb;
+  
+  /**
+   * The resource being addressed in the URL. For more details, see https://developers.google.com/storage/docs/accesscontrol#About-Canonical-Resources.
+   */
+  String canonicalizedResource;
+  
+  /**
+   * Epoch time expressed in seconds, when the signed URL expires. The server will reject any requests received after this timestamp.
+   */
+  int expirationEpochTimeSeconds;
+  
+  /**
+   * Construct new signed request.
+   */
+  SignedRequest(String this.url, String this.httpVerb, String this.canonicalizedResource, int this.expirationEpochTimeSeconds);
+}
+
 class Notary {
 
   /**
@@ -18,14 +46,14 @@ class Notary {
   /**
    * Sign Google Cloud Storage request
    */
-  static String _sign(String googleAccessStorageId, RSAPrivateKey privateKey, String httpVerb, int expirationSeconds, String canonicalizedResource, {String contentMD5 : "", String contentType : "", String canonicalizedExtensionHeaders : "", bool useSSL : true}) {
+  static SignedRequest _sign(String googleAccessStorageId, RSAPrivateKey privateKey, String httpVerb, int expirationSeconds, String canonicalizedResource, {String contentMD5 : "", String contentType : "", String canonicalizedExtensionHeaders : "", bool useSSL : true}) {
 
     // Calculate absolute expiration time
     int secondsSinceEpoch = new DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    int expiration = secondsSinceEpoch + expirationSeconds;
+    int expirationEpochTimeSeconds = secondsSinceEpoch + expirationSeconds;
 
     // Construct string to sign
-    List<int> stringToSign = UTF8.encode(httpVerb + "\n" + contentMD5 + "\n" + contentType + "\n" + expiration.toString() + "\n" + canonicalizedExtensionHeaders + canonicalizedResource);
+    List<int> stringToSign = UTF8.encode(httpVerb + "\n" + contentMD5 + "\n" + contentType + "\n" + expirationEpochTimeSeconds.toString() + "\n" + canonicalizedExtensionHeaders + canonicalizedResource);
 
     // Sign payload
     var signer = new RS256Signer(privateKey);
@@ -37,9 +65,11 @@ class Notary {
     // The Base64 encoded signature may contain characters not legal in URLs (specifically + and /). These values must be replaced by safe encodings (%2B and %2F, respectively.)
     base64EncodedSignedRequest = Uri.encodeQueryComponent(base64EncodedSignedRequest);//hash.replaceAll("+", "%2B").replaceAll("/", "%2F");
 
-    // Return signed URL
-    String url = "http${useSSL ? 's' : ''}://storage.googleapis.com${canonicalizedResource}?GoogleAccessId=${googleAccessStorageId}&Expires=${expiration.toString()}&Signature=${base64EncodedSignedRequest}";
-    return url;
+    // Form signed URL
+    String url = "http${useSSL ? 's' : ''}://storage.googleapis.com${canonicalizedResource}?GoogleAccessId=${googleAccessStorageId}&Expires=${expirationEpochTimeSeconds.toString()}&Signature=${base64EncodedSignedRequest}";
+    
+    // Return signed request
+    return new SignedRequest(url, httpVerb, canonicalizedResource, expirationEpochTimeSeconds);
   }
 
   /**
@@ -64,18 +94,18 @@ class Notary {
    * @param useSSL
    *      Optional. Set to true to sign HTTPS URL.
    */
-  static Future<String> sign(String googleAccessStorageId, String pemFilePath, String httpVerb, int expirationSeconds, String canonicalizedResource, {String contentMD5 : "", String contentType : "", String canonicalizedExtensionHeaders : "", bool useSSL : true}) {
+  static Future<SignedRequest> sign(String googleAccessStorageId, String pemFilePath, String httpVerb, int expirationSeconds, String canonicalizedResource, {String contentMD5 : "", String contentType : "", String canonicalizedExtensionHeaders : "", bool useSSL : true}) {
 
     // Completer used to defer signing request until private key file has been read
-    Completer<String> urlSigningCompleter = new Completer<String>();
+    Completer<SignedRequest> urlSigningCompleter = new Completer<SignedRequest>();
 
     // Do we have a cached key?
     RSAPrivateKey privateKey = _privateKeys[pemFilePath];
     if (privateKey != null) {
 
       // Yes, return URL signed using cached key
-      String signedUrl = _sign(googleAccessStorageId, privateKey, httpVerb, expirationSeconds, canonicalizedResource, contentMD5 : contentMD5, contentType : contentType, canonicalizedExtensionHeaders : canonicalizedExtensionHeaders, useSSL : useSSL);
-      urlSigningCompleter.complete(signedUrl);
+      SignedRequest signedRequest = _sign(googleAccessStorageId, privateKey, httpVerb, expirationSeconds, canonicalizedResource, contentMD5 : contentMD5, contentType : contentType, canonicalizedExtensionHeaders : canonicalizedExtensionHeaders, useSSL : useSSL);
+      urlSigningCompleter.complete(signedRequest);
     }
     else {
 
@@ -94,8 +124,8 @@ class Notary {
         _privateKeys[pemFilePath] = privateKey;
 
         // Return signed URL
-        String signedUrl = _sign(googleAccessStorageId, privateKey, httpVerb, expirationSeconds, canonicalizedResource, contentMD5 : contentMD5, contentType : contentType, canonicalizedExtensionHeaders : canonicalizedExtensionHeaders, useSSL : useSSL);
-        urlSigningCompleter.complete(signedUrl);
+        SignedRequest signedRequest = _sign(googleAccessStorageId, privateKey, httpVerb, expirationSeconds, canonicalizedResource, contentMD5 : contentMD5, contentType : contentType, canonicalizedExtensionHeaders : canonicalizedExtensionHeaders, useSSL : useSSL);
+        urlSigningCompleter.complete(signedRequest);
       });
     };
 

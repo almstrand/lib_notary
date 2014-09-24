@@ -17,8 +17,10 @@ Notary.sign(
 .catchError((e) {
   print("An error occured: $e");
 })
-.then((String signedUrl) {
-  print("Signed URL: $signedUrl");
+.then((SignedRequest signedRequest) {
+  if (signedRequest != null) {
+    print("Signed URL: ${signedRequest.url}");
+  }
 });
 ```
 

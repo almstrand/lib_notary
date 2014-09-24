@@ -1,8 +1,8 @@
 name: notary
-version: 0.0.1
+version: 0.0.2
 author: Cristian Almstrand <cristian.almstrand@gmail.com>
 homepage: https://github.com/almstrand/lib_notary
-description: Server-side library to sign Google Cloud Storage requests and enable uploading or accessing Google Cloud Storage files directly from web applications without exposing private keys to end-users.
+description: Server-side library simplifying signing Google Cloud Storage HTTP requests to authorize file access (upload, download, etc.) via your website.
 environment:
   sdk: '>=1.7.0-dev.2.0 <2.0.0'
 dependencies:
