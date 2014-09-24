@@ -1,7 +1,7 @@
 notary
 ===========
 
-Server-side library to sign Google Cloud Storage requests and enable uploading or accessing Google Cloud Storage files directly from web applications without exposing private keys to end-users.
+Server-side library simplifying signing Google Cloud Storage HTTP requests to authorize file access (upload, download, etc.) via your website.
 
 Sample usage
 -----------
