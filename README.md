@@ -6,20 +6,52 @@ Server-side library simplifying signing Google Cloud Storage HTTP requests to au
 Sample usage
 -----------
 
+This sample code returns a signed URL that can ge requested (GET) to download specified file from Google Cloud Storage.
+
+### GET (download) example
 ```
-Notary.sign(
+Notary.signGetRequest(
   "<my-storage-id>@developer.gserviceaccount.com",
   "my-private-key.pem",
-  "GET",
   10 * 60 /* 10 min */,
-  "/my-bucket/my-file.txt"
+  "my-bucket",
+  "my-file.txt"
 )
 .catchError((e) {
-  print("An error occured: $e");
+  print("An error occurred: $e");
 })
 .then((SignedRequest signedRequest) {
   if (signedRequest != null) {
-    print("Signed URL: ${signedRequest.url}");
+    print("Signed download URL: ${signedRequest.url}");
+  }
+});
+```
+
+### POST (upload) example
+
+This sample code returns parameters to be specified in your HTML form element when uploading a file to Google Cloud Storage.
+
+```
+Notary.signPostRequest(
+  "<my-storage-id>@developer.gserviceaccount.com",
+  "my-private-key.pem",
+  10 * 60 /* 10 min */,
+  "my-bucket",
+  "my-file.txt",
+  "bucket-owner-read"
+)
+.catchError((e) {
+  print("An error occurred: $e");
+})
+.then((SignedRequest signedRequest) {
+  if (signedRequest != null) {
+    RequestFormData requestFormData = signedRequest.requestFormData;
+    print("URL: ${signedRequest.url}");
+    print("Expiration: ${signedRequest.expiration}");
+    print("Key: ${requestFormData.key}");
+    print("GoogleAccessId: ${requestFormData.GoogleAccessId}");
+    print("Policy: ${requestFormData.policy}");
+    print("signature: ${requestFormData.signature}");
   }
 });
 ```
