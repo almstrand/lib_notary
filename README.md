@@ -6,9 +6,10 @@ Server-side library simplifying signing Google Cloud Storage HTTP requests to au
 Sample usage
 -----------
 
+### GET (download) example
+
 This sample code returns a signed URL that can ge requested (GET) to download specified file from Google Cloud Storage.
 
-### GET (download) example
 ```
 Notary.signGetRequest(
   "<my-storage-id>@developer.gserviceaccount.com",
