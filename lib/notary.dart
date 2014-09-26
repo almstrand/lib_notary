@@ -59,7 +59,6 @@ class SignedRequest {
   /**
    * Construct new signed request.
    */
-
   SignedRequest(String this.url, int this.expiration, { RequestFormData this.requestFormData : null});
 }
 
@@ -91,21 +90,20 @@ class Notary {
         rsaPrivateKeyCompleter.completeError(error);
       }).then((String pemFileContents) {
 
-        // Return null if error caught upon reading the private key file
-        if (pemFileContents == null) {
-          rsaPrivateKeyCompleter.complete(null);
+        // Was reading PEM file successful?
+        if (pemFileContents != null) {
+
+          // Yes, parse PEM file
+          privateKey = keyFromString(pemFileContents);
+
+          // Cache private key, if requested
+          if (cachePrivateKeys) {
+            _privateKeys[pemFilePath] = privateKey;
+          }
+
+          // Complete future referencing private key
+          rsaPrivateKeyCompleter.complete(privateKey);
         }
-
-        // Parse PEM file
-        privateKey = keyFromString(pemFileContents);
-
-        // Cache private key, if requested
-        if (cachePrivateKeys) {
-          _privateKeys[pemFilePath] = privateKey;
-        }
-
-        // Complete future referencing private key
-        rsaPrivateKeyCompleter.complete(privateKey);
       });
     }
 
@@ -223,18 +221,16 @@ class Notary {
       urlSigningCompleter.completeError(error);
     }).then((RSAPrivateKey privateKey) {
 
-      // Complete future if caught error when reading/parsing key file
-      if (privateKey == null) {
-        urlSigningCompleter.complete(null);
-      } else {
+      // Was reading/parsing PEM file successful?
+      if (privateKey != null) {
 
-        // Form GCS URL
+        // Yes, form GCS URL
         String url = "http${useSSL ? 's' : ''}://${bucketName}.storage.googleapis.com";
 
         // Generate ISO-8601 formatted datetime string that GCS likes
         int millisecondsSinceEpoch = new DateTime.now().millisecondsSinceEpoch;
         int expirationTimeSinceEpochMillis = millisecondsSinceEpoch + expirationSeconds * 1000;
-        DateTime exprationDateTime = new DateTime.fromMillisecondsSinceEpoch(expirationTimeSinceEpochMillis);
+        DateTime exprationDateTime = new DateTime.fromMillisecondsSinceEpoch(expirationTimeSinceEpochMillis, isUtc: true);
         String iso8601ExpirationDate = exprationDateTime.toIso8601String();
         int millisecondDelimiterPos = iso8601ExpirationDate.indexOf(".");
         if (millisecondDelimiterPos > 0) {

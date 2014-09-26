@@ -1,7 +1,7 @@
 notary
 ===========
 
-Server-side library simplifying signing Google Cloud Storage HTTP requests to authorize file access (upload, download, etc.) via your website.
+Server-side library to sign Google Cloud Storage HTTP requests and authorize file access (upload, download, etc.) via your website.
 
 Sample usage
 -----------
@@ -55,6 +55,20 @@ Notary.signPostRequest(
     print("signature: ${requestFormData.signature}");
   }
 });
+```
+
+The resulting paramaters can be used in an HTML form as such:
+
+```
+<form action="https://<my-bycket>.storage.googleapis.com" method="POST" enctype="multipart/form-data">
+  <input type="text" name="key" value="<my-key>"/>
+  <input type="hidden" name="GoogleAccessId" value="<my-access-id>">
+  <input type="hidden" name="acl" value="bucket-owner-read">
+  <input id="policy" type="hidden" name="policy" value="<my-policy>">
+  <input id="signature" type="hidden" name="signature" value="<my-signature>">
+  <input id="file" name="file" type="file">
+  <input type="submit" value="Upload">
+</form>
 ```
 
 Note
