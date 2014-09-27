@@ -1,10 +1,21 @@
-*/packages
-*/pubspec.lock
-.idea
-
-# Pub generated "packages" directories and files
+# Don’t commit the following files and directories created by pub, Dart Editor, and dart2js:
+build/
 packages
 pubspec.lock
+.buildlog
+.project
+.pub/
 
-# Pub generated build
-build
+# Don’t commit files and directories dropped by other development environments. For example:
+.project
+*.iml
+*.ipr
+*.iws
+.idea/
+.DS_Store
+
+# Avoid committing generated JavaScript files:
+*.dart.js
+*.js_
+*.js.deps
+*.js.map
